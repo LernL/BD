@@ -24,15 +24,27 @@ class Model:
 
     def list_all(self):
         with self.conn.cursor() as c:
-            c.execute("SELECT phone_num_w, name FROM waiter ORDER BY phone_num_w")
+            c.execute("SELECT * FROM waiter ORDER BY phone_num_w")
             return c.fetchall()
 
     def update(self, phone_num_w, new_name):
+        fields = []
+        values = []
+
+        if new_name != "":
+            fields.append("name = %s")
+            values.append(new_name)
+
+        if not fields:
+            return
+
+        values.append(int(phone_num_w))
+
+        query = f"UPDATE waiter SET {', '.join(fields)} WHERE phone_num_w = %s"
+
         with self.conn.cursor() as c:
-            c.execute(
-                "UPDATE waiter SET name=%s WHERE phone_num_w=%s",
-                (new_name, int(phone_num_w))
-            )
+            c.execute(query, values)
+
         self.conn.commit()
 
     def delete(self, phone_num_w):

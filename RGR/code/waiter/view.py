@@ -1,6 +1,6 @@
 class View:
     def __init__(self):
-        self.cols = ["Employee number", "Name"]
+        self.cols = ["Name", "Employee number"]
 
     def show_items(self):
         sep = "-" * (2*25)

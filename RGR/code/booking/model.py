@@ -29,15 +29,44 @@ class Model:
 
     def list_all(self):
         with self.conn.cursor() as c:
-            c.execute("SELECT id, time_book, end_time, num_table, phone_num_cl, people_num FROM booking ORDER BY id")
+            c.execute("SELECT * FROM booking ORDER BY id")
             return c.fetchall()
 
-    def update(self, id_pk, time_book, end_time, num_table, phone_num_cl, people_num):
-        with self.conn.cursor() as c:
-            c.execute("UPDATE booking SET time_book=%s, end_time=%s, num_table=%s, phone_num_cl=%s, people_num=%s WHERE id=%s",
-                      (int(time_book), int(end_time), int(num_table), int(phone_num_cl), int(people_num), int(id_pk)))
-        self.conn.commit()
+    def update(self, id, time_book, end_time, num_table, phone_num_cl, people_num):
+        fields = []
+        values = []
 
+        if time_book != "":
+            fields.append("time_book = %s")
+            values.append(int(time_book))
+
+        if end_time != "":
+            fields.append("end_time = %s")
+            values.append(int(end_time))
+
+        if num_table != "":
+            fields.append("num_table = %s")
+            values.append(int(num_table))
+
+        if phone_num_cl != "":
+            fields.append("phone_num_cl = %s")
+            values.append(int(phone_num_cl))
+
+        if people_num != "":
+            fields.append("people_num = %s")
+            values.append(int(people_num))
+
+        if not fields:
+            return
+
+        values.append(int(id))
+
+        query = f"UPDATE booking SET {', '.join(fields)} WHERE id = %s"
+
+        with self.conn.cursor() as c:
+            c.execute(query, values)
+
+        self.conn.commit()
     def delete(self, id_pk):
         with self.conn.cursor() as c:
             c.execute("DELETE FROM booking WHERE id=%s", (int(id_pk),))

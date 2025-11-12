@@ -28,13 +28,35 @@ class Model:
 
     def list_all(self):
         with self.conn.cursor() as c:
-            c.execute('SELECT num_table, number_chairs, material, table_shape FROM public.table ORDER BY num_table')
+            c.execute('SELECT * FROM public.table ORDER BY num_table')
             return c.fetchall()
 
     def update(self, num_table, number_chairs, material, table_shape):
+        fields = []
+        values = []
+
+        if number_chairs != "":
+            fields.append("number_chairs = %s")
+            values.append(int(number_chairs))
+
+        if material != "":
+            fields.append("material = %s")
+            values.append(material)
+
+        if table_shape != "":
+            fields.append("table_shape = %s")
+            values.append(table_shape)
+
+        if not fields:
+            return
+
+        values.append(int(num_table))
+
+        query = f"UPDATE public.table SET {', '.join(fields)} WHERE num_table = %s"
+
         with self.conn.cursor() as c:
-            c.execute('UPDATE public.table SET number_chairs=%s, material=%s, table_shape=%s WHERE num_table=%s',
-                      (int(number_chairs) if number_chairs != "" else "?", material or "?", table_shape or "?", int(num_table)))
+            c.execute(query, values)
+
         self.conn.commit()
 
     def delete(self, num_table):

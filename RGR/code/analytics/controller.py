@@ -36,11 +36,10 @@ class Controller:
 
     def by_waiter(self):
         waiter = input("waiter name (partial, enter skip): ").strip()
-        waiter_like = None if waiter == "" else (waiter if '%' in waiter else f"%{waiter}%")
         hf = self.view.get_input_int("hour from (0-23, enter to skip): ")
         ht = self.view.get_input_int("hour to (0-23, enter to skip): ")
 
-        rows, cols, ms = self.model.search_by_waiter(waiter_like, hf, ht)
+        rows, cols, ms = self.model.search_by_waiter(waiter, hf, ht)
         self.view.show_table(rows, cols, ms)
 
     def show_table_bookings(self):

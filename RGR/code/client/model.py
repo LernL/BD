@@ -25,13 +25,31 @@ class Model:
 
     def list_all(self):
         with self.conn.cursor() as c:
-            c.execute("SELECT phone_num_cl, email, phone_num_w FROM client ORDER BY phone_num_cl")
+            c.execute("SELECT * FROM client ORDER BY phone_num_cl")
             return c.fetchall()
 
     def update(self, phone_num_cl, email, phone_num_w):
+        fields = []
+        values = []
+
+        if email != "":
+            fields.append("email = %s")
+            values.append(email)
+
+        if phone_num_w != "":
+            fields.append("phone_num_w = %s")
+            values.append(int(phone_num_w))
+
+        if not fields:
+            return
+
+        values.append(int(phone_num_cl))
+
+        query = f"UPDATE client SET {', '.join(fields)} WHERE phone_num_cl = %s"
+
         with self.conn.cursor() as c:
-            c.execute("UPDATE client SET email=%s, phone_num_w=%s WHERE phone_num_cl=%s",
-                      (email, int(phone_num_w), int(phone_num_cl)))
+            c.execute(query, values)
+
         self.conn.commit()
 
     def delete(self, phone_num_cl):

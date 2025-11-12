@@ -1,6 +1,5 @@
 import shutil
 
-
 class View:
 
     def show_table(self, rows, cols, ms=None):
@@ -9,26 +8,23 @@ class View:
             return
 
         term_width = shutil.get_terminal_size((80, 20)).columns
-        col_widths = [max(len(str(row[i])) for row in rows + [cols]) for i in range(len(cols))]
+        n_cols = len(cols)
+        col_width = max(term_width // n_cols - 3, 5)
 
-        def center_row(row):
-            line = " | ".join(str(row[i]).ljust(col_widths[i]) for i in range(len(row)))
-            padding = max((term_width - len(line)) // 2, 0)
-            return " " * padding + line
+        def format_row(row):
+            return " | ".join(str(row[i] if row[i] is not None else "").ljust(col_width)[:col_width] for i in range(len(row)))
 
-        # Друкуємо заголовок
-        print(center_row(cols))
-        print(center_row(["-" * w for w in col_widths]))
+        header = format_row(cols)
+        sep = "-".ljust(len(header), "-")
 
-        # Друкуємо рядки
+        print(header)
+        print(sep)
+
         for row in rows:
-            print(center_row(row))
+            print(format_row(row))
 
-        # Друкуємо час виконання окремо, по центру всієї таблиці
         if ms is not None:
-            total_width = sum(col_widths) + 3 * (len(cols) - 1)
-            padding = max((term_width - total_width) // 2, 0)
-            print(" " * padding + f"Time: {ms:.2f} ms")
+            print(f"\nTime: {ms:.2f} ms")
 
     def get_input_int(self, prompt):
         s = input(prompt).strip()

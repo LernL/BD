@@ -23,12 +23,27 @@ class Model:
 
     def list_all(self):
         with self.conn.cursor() as c:
-            c.execute("SELECT email, name FROM contacts_client ORDER BY email")
+            c.execute("SELECT * FROM contacts_client ORDER BY email")
             return c.fetchall()
 
     def update(self, email, name):
+        fields = []
+        values = []
+
+        if name != "":
+            fields.append("name = %s")
+            values.append(name)
+
+        if not fields:
+            return
+
+        values.append(email)
+
+        query = f"UPDATE contacts_client SET {', '.join(fields)} WHERE email = %s"
+
         with self.conn.cursor() as c:
-            c.execute("UPDATE contacts_client SET name=%s WHERE email=%s", (name, email))
+            c.execute(query, values)
+
         self.conn.commit()
 
     def delete(self, email):

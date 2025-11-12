@@ -4,7 +4,7 @@ class Model:
     def __init__(self):
         self.conn = psycopg2.connect("dbname=postgres user=postgres password=1234adminL host=localhost port=5432")
 
-    def search_by_table(self, people_min=None, people_max=None, hour_from=None, hour_to=None, num_table=None, limit=1000):
+    def search_by_table(self, people_min=None, people_max=None, hour_from=None, hour_to=None, num_table=None):
         where = []
         params = []
         if people_min is not None:
@@ -25,21 +25,18 @@ class Model:
           t.table_shape,
           t.material,
           MIN(b.time_book) AS start_hour,
-          MAX(b.end_time) AS end_hour,
-          ROUND(AVG(b.people_num))::int AS avg_people
+          MAX(b.end_time) AS end_hour
         FROM booking b
         JOIN "table" t ON b.num_table = t.num_table
         {where_clause}
         GROUP BY t.num_table, t.table_shape, t.material
         {having_clause}
         ORDER BY start_hour, t.num_table
-        LIMIT %s
         """
 
         exec_params = list(params)
         if hour_to is not None:
             exec_params.append(int(hour_to))
-        exec_params.append(int(limit))
 
         with self.conn.cursor() as cur:
             t0 = time.perf_counter()
@@ -49,13 +46,17 @@ class Model:
             ms = (time.perf_counter() - t0) * 1000.0
         return rows, cols, ms
 
-    def search_by_waiter(self, waiter_like=None, hour_from=None, hour_to=None, limit=1000):
+    def search_by_waiter(self, waiter_name=None, hour_from=None, hour_to=None):
         where = []
         params = []
-        if waiter_like is not None:
-            where.append("w.name ILIKE %s"); params.append(waiter_like)
+
+        if waiter_name:
+            where.append("w.name = %s")
+            params.append(waiter_name)
+
         if hour_from is not None:
-            where.append("b.time_book >= %s"); params.append(int(hour_from))
+            where.append("b.time_book >= %s")
+            params.append(int(hour_from))
 
         where_clause = ("WHERE " + " AND ".join(where)) if where else ""
         having_clause = "HAVING MAX(b.end_time) <= %s" if hour_to is not None else ""
@@ -65,8 +66,7 @@ class Model:
           w.name AS waiter_name,
           MIN(b.time_book) AS start_hour,
           MAX(b.end_time) AS end_hour,
-          SUM(b.people_num) AS total_people,
-          ROUND(AVG(b.people_num))::int AS avg_people
+          SUM(b.people_num) AS total_people
         FROM booking b
         JOIN "table" t ON b.num_table = t.num_table
         LEFT JOIN client c ON b.phone_num_cl = c.phone_num_cl
@@ -75,13 +75,11 @@ class Model:
         GROUP BY w.name
         {having_clause}
         ORDER BY start_hour, w.name
-        LIMIT %s
         """
 
         exec_params = list(params)
         if hour_to is not None:
             exec_params.append(int(hour_to))
-        exec_params.append(int(limit))
 
         with self.conn.cursor() as cur:
             t0 = time.perf_counter()
@@ -89,9 +87,10 @@ class Model:
             rows = cur.fetchall()
             cols = [d[0] for d in cur.description] if cur.description else []
             ms = (time.perf_counter() - t0) * 1000.0
+
         return rows, cols, ms
 
-    def show_table_bookings(self, num_table, limit=1000):
+    def show_table_bookings(self, num_table):
         q = """
         SELECT
           b.id,
@@ -108,11 +107,10 @@ class Model:
         LEFT JOIN waiter w ON c.phone_num_w = w.phone_num_w
         WHERE b.num_table = %s
         ORDER BY b.time_book, b.id
-        LIMIT %s
         """
         with self.conn.cursor() as cur:
             t0 = time.perf_counter()
-            cur.execute(q, (int(num_table), int(limit)))
+            cur.execute(q, (int(num_table)))
             rows = cur.fetchall()
             cols = [d[0] for d in cur.description] if cur.description else []
             ms = (time.perf_counter() - t0) * 1000.0
